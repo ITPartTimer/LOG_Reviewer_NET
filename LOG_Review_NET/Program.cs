@@ -2,13 +2,7 @@
 using System.Configuration;
 using System.IO;
 using System.Collections.Generic;
-using System.Linq;
-using System.Data;
-using System.Data.SqlClient;
-using System.Text;
-using System.Threading.Tasks;
-using SendGrid;
-using SendGrid.Helpers.Mail;
+using System.Net.Mail;
 using LOG_Review_NET.Models;
 using STXtoSQL.Log;
 using LOG_Review_NET.DataAccess;
@@ -104,42 +98,37 @@ namespace LOG_Review_NET
             #region Email
             /*
              * Emailing the file is optoinal
-             * emailIt = true or false
-             * 
-             * START HERE.  ADD LOG REPORT TO SCOTT CLEMONS.  USE SENDGRID INSTEAD OF OFFICE 365
-             * USE ENVIRONMENT VARIABLES TO ABSTRACT THE EMAIL CLIENT.
+             * emailIt = true or false           
              */
             if (emailIt)
             {
                 try
                 {
-                    //MailMessage mail = new MailMessage();
+                    string emailTo = ConfigurationManager.AppSettings.Get("EmailTo");
+                    string pwd365 = Environment.GetEnvironmentVariable("sysOffice365PWD");
 
-                    //SmtpClient SmtpServer = new SmtpClient("smtp.office365.com");
+                    MailMessage mail = new MailMessage();
 
-                    //mail.From = new MailAddress("noreply@calstripsteel.com");
-                    //mail.Subject = brh + " - Daily";
-                    //mail.Body = "Report attached";
+                    SmtpClient SmtpServer = new SmtpClient("smtp.office365.com");
 
-                    ////Build To: line from emails in list of EmployeesReportsModel
-                    //foreach (EmployeesReportsModel e in lstEmpReports)
-                    //{
-                    //    Logger.LogWrite("MSG", "Email: " + e.email.ToString());
-                    //    mail.To.Add(e.email.ToString());
-                    //}
+                    mail.From = new MailAddress("noreply@calstripsteel.com");
+                    mail.Subject = "Log - Daily";
+                    mail.Body = "Report attached";
 
-                    //// Add attachment
-                    //Attachment attach;
-                    //attach = new Attachment(fullPath);
-                    //mail.Attachments.Add(attach);
+                    mail.To.Add(emailTo);
+  
+                    // Add attachment
+                    Attachment attach;
+                    attach = new Attachment(fullPath);
+                    mail.Attachments.Add(attach);
 
-                    //SmtpServer.Port = 587;
-                    //SmtpServer.Credentials = new System.Net.NetworkCredential("noreply@calstripsteel.com", "SW_M@t@l");
-                    //SmtpServer.EnableSsl = true;
+                    SmtpServer.Port = 587;
+                    SmtpServer.Credentials = new System.Net.NetworkCredential("noreply@calstripsteel.com", pwd365);
+                    SmtpServer.EnableSsl = true;
 
-                    //SmtpServer.Send(mail);
+                    SmtpServer.Send(mail);
 
-                    SendMail(ConfigurationManager.AppSettings.Get("EmailTo"), fullPath).Wait();
+                    Logger.LogWrite("MSG", "Email: " + emailTo);
                 }
                 catch (Exception ex)
                 {
@@ -156,25 +145,8 @@ namespace LOG_Review_NET
             Logger.LogWrite("MSG", "End: " + DateTime.Now.ToString());
 
             // Testing
-            Console.WriteLine("Press key to exit");
-            Console.ReadKey();
-        }
-
-        static async Task SendMail(string emailTo, string fullPath)
-        {
-            var apiKey = Environment.GetEnvironmentVariable("sysSendGridAPIKey");
-            var client = new SendGridClient(apiKey);
-            var from = new EmailAddress("noreply@calstripsteel.com", null);
-            var subject = "Log - Daily";
-            var plainTextContent = "Report attached";
-
-            var to = new EmailAddress(emailTo, null);
-
-            var msg = MailHelper.CreateSingleEmail(from, to, subject, plainTextContent, plainTextContent);
-
-            msg.AddAttachment("LogData.xls", fullPath);
-
-            var response = await client.SendEmailAsync(msg);
+            //Console.WriteLine("Press key to exit");
+            //Console.ReadKey();
         }
     }
 }
