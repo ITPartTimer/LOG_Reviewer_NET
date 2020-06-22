@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Configuration;
 using System.Data;
 using System.Data.SqlClient;
 using System.Collections.Generic;
@@ -14,6 +15,8 @@ namespace LOG_Review_NET.DataAccess
     {
         public List<LogDataModel> Get_Log_Data()
         {
+            string logLen = ConfigurationManager.AppSettings.Get("LogLength");
+
             List<LogDataModel> lst = new List<LogDataModel>();
 
             SqlCommand cmd = new SqlCommand();
@@ -26,7 +29,7 @@ namespace LOG_Review_NET.DataAccess
                 conn.Open();
 
                 cmd.CommandType = CommandType.Text;
-                cmd.CommandText = "select top 50 * from Log order by LogID desc";
+                cmd.CommandText = "select top " + logLen + " * from Log order by LogID desc";
                 cmd.Connection = conn;
 
                 rdr = cmd.ExecuteReader();
@@ -53,8 +56,5 @@ namespace LOG_Review_NET.DataAccess
 
             return lst;
         }
-
-       
-
     }
 }
